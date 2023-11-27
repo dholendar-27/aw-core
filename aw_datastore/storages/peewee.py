@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import sys
+import ctypes
 from datetime import datetime, timedelta, timezone
 from typing import (
     Any,
@@ -9,11 +10,18 @@ from typing import (
     List,
     Optional,
 )
+
+from aw_core.cache import cache_user_credentials
 if sys.platform == "win32":
     _module_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
-    print(_module_dir)
     os.add_dll_directory(_module_dir)
-
+elif sys.platform == "darwin":
+    _module_dir = os.path.dirname(os.path.realpath(__file__))
+    _parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(os.path.join(_module_dir, os.pardir))))
+    libsqlcipher_path = _parent_dir
+    print(libsqlcipher_path)
+    libsqlcipher = ctypes.cdll.LoadLibrary(libsqlcipher_path + '/libsqlcipher.0.dylib')
+    openssl= ctypes.cdll.LoadLibrary(libsqlcipher_path + '/libcrypto.3.dylib')
 from aw_core.util import decrypt_uuid, load_key
 import keyring
 import iso8601
@@ -38,7 +46,6 @@ from .abstract import AbstractStorage
 from cryptography.fernet import Fernet
 import cryptocode
 import keyring
-
 logger = logging.getLogger(__name__)
 
 # Prevent debug output from propagating
@@ -151,9 +158,15 @@ class PeeweeStorage(AbstractStorage):
         self.init_db()
 
     def init_db(self, testing: bool = True, filepath: Optional[str] = None) -> bool:
-        db_key = keyring.get_password("sdcdb", "sdcdb")
-        key = load_key("sdcu", "sdcu")
-        if not db_key or not key:
+        db_key = ""
+        cache_key = "current_user_credentials"
+        cached_credentials = cache_user_credentials(cache_key)
+        if cached_credentials != None:
+            db_key = cached_credentials.get("encrypted_db_key")
+        else:
+            db_key == None
+        key = load_key('user_key')
+        if db_key == None or key == None:
             logger.info("User account not exist")
             data_dir = get_data_dir("aw-server")
  
@@ -172,8 +185,9 @@ class PeeweeStorage(AbstractStorage):
  
             return False
         else:
+            
             password = decrypt_uuid(db_key, key)
-            user_email = keyring.get_password("sdce", "sdce")
+            user_email = cached_credentials.get("email")
             if not password:
                 return False
             data_dir = get_data_dir("aw-server")
