@@ -22,7 +22,7 @@ elif sys.platform == "darwin":
     libsqlcipher = ctypes.cdll.LoadLibrary(libsqlcipher_path + '/libsqlcipher.0.dylib')
     openssl= ctypes.cdll.LoadLibrary(libsqlcipher_path + '/libcrypto.3.dylib')
 
-from aw_core.util import decrypt_uuid, load_key, start_all_module, stop_all_module
+from aw_core.util import decrypt_uuid, load_key
 import keyring
 import iso8601
 from aw_core.dirs import get_data_dir
@@ -187,8 +187,8 @@ class PeeweeStorage(AbstractStorage):
 
     def init_db(self, testing: bool = True, filepath: Optional[str] = None) -> bool:
         db_key = ""
-        cache_key = "current_user_credentials"
-        cached_credentials = cache_user_credentials(cache_key)
+        cache_key = "sundail"
+        cached_credentials = cache_user_credentials(cache_key, "SD_KEYS")
         if cached_credentials != None:
             db_key = cached_credentials.get("encrypted_db_key")
         else:
@@ -246,8 +246,6 @@ class PeeweeStorage(AbstractStorage):
 
             # Update bucket keys
             self.update_bucket_keys()
-            stop_all_module()
-            start_all_module()
 
             return True
 
