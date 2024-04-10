@@ -1,7 +1,7 @@
 import os
 import subprocess
 import sys
-import plistlib
+
 
 if sys.platform == "win32":
     import winreg
@@ -40,20 +40,20 @@ def check_startup_status():
         return get_login_items()
     elif sys.platform == "win32":
         key_path = r'Software\Microsoft\Windows\CurrentVersion\Run'
-            with winreg.OpenKey(
-                    key=winreg.HKEY_CURRENT_USER,
-                    sub_key=key_path,
-                    reserved=0,
-                    access=winreg.KEY_READ,
-            ) as key:
-                try:
-                    value, _ = winreg.QueryValueEx(key, "TTim")
-                    return True
-                except FileNotFoundError:
-                    return False
-    
+        with winreg.OpenKey(
+                key=winreg.HKEY_CURRENT_USER,
+                sub_key=key_path,
+                reserved=0,
+                access=winreg.KEY_READ,
+        ) as key:
+            try:
+                value, _ = winreg.QueryValueEx(key, "TTim")
+                return True
+            except FileNotFoundError:
+                return False
 
-# Windows
+
+    # Windows
 
 def set_autostart_registry(autostart: bool = True) -> bool:
     """
