@@ -313,6 +313,10 @@ class AbstractStorage(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
+    def get_non_sync_application_details(self):
+        raise NotImplementedError
+    
+    @abstractmethod
     def update_server_sync_status(self, list_of_ids, new_status):
         raise NotImplementedError
 

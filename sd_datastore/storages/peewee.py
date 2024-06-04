@@ -262,6 +262,18 @@ class ApplicationModel(BaseModel):
                 logger.error("No existing application found to update")
                 # You can choose to raise the error or handle it differently based on your application's needs
 
+    @classmethod
+    def get_last_five_minutes_records(cls):
+        """
+        Get records created within the last five minutes.
+        :return: A list of ApplicationModel instances.
+        """
+        end_time = datetime.now()
+        start_time = end_time - timedelta(minutes=5)
+        query = cls.select().where(cls.created_at >start_time)
+        return list(query)
+        
+
     def json(self):
         """
         Convert the model instance to a JSON-compatible dictionary.
@@ -614,6 +626,7 @@ class PeeweeStorage(AbstractStorage):
                 if filepath != os.path.join(data_dir, filename):
                     database_changed = True
             _db = SqlCipherDatabase(None, passphrase=password)
+            print("password",password)
             db_proxy.initialize(_db)
             self.db = _db
             self.db.init(filepath)
@@ -932,6 +945,16 @@ class PeeweeStorage(AbstractStorage):
 
         # Print the formatted events
         return formatted_events
+    
+    def _get_non_sync_application_details(self):
+    
+        records=ApplicationModel.get_last_five_minutes_records()
+
+        return records
+
+    def get_non_sync_application_details(self):
+
+        return self._get_non_sync_application_details()
 
     def _get_non_sync_events(self) -> []:
         """

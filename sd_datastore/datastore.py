@@ -216,8 +216,12 @@ class Datastore:
         """
         return self.storage_strategy.get_dashboard_events(starttime, endtime)
 
-    def get_non_sync_events(self) -> []:
+    def get_non_sync_events(self):
         return self.storage_strategy.get_non_sync_events()
+    
+    def get_non_sync_application_details(self):
+
+        return self.storage_strategy.get_non_sync_application_details()
 
     def update_server_sync_status(self, list_of_ids, new_status):
         return self.storage_strategy.update_server_sync_status(list_of_ids, new_status)

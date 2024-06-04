@@ -144,6 +144,24 @@ def store_credentials(key, password):
     """Store a password in the cache."""
     credentials_cache[key] = password
 
+def store_access_token(key,access_token):
+
+    """
+        store access token.
+
+    """
+
+    credentials_cache[key]=access_token
+
+def get_access_token(key):
+
+    """
+        get access token
+
+    """
+
+    return credentials_cache.get(key)
+
 
 def get_credentials(key):
     """
