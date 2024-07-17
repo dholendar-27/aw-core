@@ -248,6 +248,11 @@ def stop_all_module():
         if not module["watcher_name"] == "sd-server":
             manager.stop_modules(module["watcher_name"])
 
+def stop_server():
+    modules = list_modules()
+    # Stop all modules that have a watcher_name
+    for module in modules:
+        manager.stop_modules(module["watcher_name"])
 
 def start_all_module():
     """
