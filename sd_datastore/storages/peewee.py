@@ -22,7 +22,7 @@ from sd_core.cache import cache_user_credentials
 from sd_core import db_cache
 from sd_core.launch_start import set_autostart_registry, launch_app, check_startup_status
 from sd_qt.manager import Manager
-
+import time
 if sys.platform == "win32":
     _module_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
     os.add_dll_directory(_module_dir)
@@ -489,11 +489,11 @@ def setup_weekday_settings():
     try:
         # Define default settings for weekdays
         default_weekday_settings = {
-            "Monday": False,
-            "Tuesday": False,
-            "Wednesday": False,
-            "Thursday": False,
-            "Friday": False,
+            "Monday": True,
+            "Tuesday": True,
+            "Wednesday": True,
+            "Thursday": True,
+            "Friday": True,
             "Saturday": False,
             "Sunday": False,
             "starttime": "9:30 AM",
