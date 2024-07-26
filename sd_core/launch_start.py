@@ -11,8 +11,8 @@ if sys.platform == "win32":
     _module_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
     app_path = os.path.join(_module_dir, 'sd-qt.exe')
 if sys.platform == "darwin":
-    app_path = "/Applications/Sundial.app"
-    app_name = "Sundial"
+    app_path = "/Applications/TTim.app"
+    app_name = "TTim"
 
 
 def launch_app():
@@ -30,7 +30,7 @@ def get_login_items():
     cmd = "osascript -e 'tell application \"System Events\" to get the name of every login item'"
     result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
     data = result.stdout.strip().split(", ")
-    if "Sundial" in data:
+    if "TTim" in data:
         return True
     return False
 
@@ -47,7 +47,7 @@ def check_startup_status():
                 access=winreg.KEY_READ,
         ) as key:
             try:
-                value, _ = winreg.QueryValueEx(key, "Sundail")
+                value, _ = winreg.QueryValueEx(key, "TTim")
                 return True
             except FileNotFoundError:
                 return False
@@ -73,9 +73,9 @@ def set_autostart_registry(autostart: bool = True) -> bool:
     ) as key:
         try:
             if autostart:
-                winreg.SetValueEx(key, "Sundial", 0, winreg.REG_SZ, app_path)
+                winreg.SetValueEx(key, "TTim", 0, winreg.REG_SZ, app_path)
             else:
-                winreg.DeleteValue(key, "Sundail")
+                winreg.DeleteValue(key, "TTim")
         except OSError:
             return False
     return True
