@@ -496,8 +496,8 @@ def setup_weekday_settings():
             "Friday": True,
             "Saturday": False,
             "Sunday": False,
-            "starttime": "9:30 AM",
-            "endtime": "6:30 PM"
+            "starttime": "09:30",
+            "endtime": "18:30"
         }
 
         # Check if the weekday settings already exist in the database
