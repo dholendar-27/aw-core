@@ -546,21 +546,26 @@ class PeeweeStorage(AbstractStorage):
         """
         self.init_db()
 
+
+    def create_tables(self) -> bool:
+        try:
+            BucketModel.create_table(safe=True)
+            EventModel.create_table(safe=True)
+            SettingsModel.create_table(safe=True)
+            ApplicationModel.create_table(safe=True)
+            return True
+        except Exception as e:
+            logger.error(f"Error creating tables: {e}")
+            return False
+
     def init_db(self, testing: bool = True, filepath: Optional[str] = None) -> bool:
-        """
-         Initialize or re - initialize the database. This is called by : py : meth : ` connect ` and
-
-         @param testing - If True use test data instead of production
-         @param filepath - Path to the database file
-
-         @return True if the database was initialized False if it was
-        """
+        logger = logging.getLogger(__name__)
         db_key = ""
         cache_key = "Sundial"
         cached_credentials = cache_user_credentials(cache_key, "SD_KEYS")
-        database_changed = False  # Flag to track if the database has been changed
+        database_changed = False
 
-        # Returns the encrypted db_key if the cached credentials are cached.
+        # Get the encrypted db_key if the credentials are cached
         if cached_credentials is not None:
             db_key = cached_credentials.get("encrypted_db_key")
         else:
@@ -568,88 +573,131 @@ class PeeweeStorage(AbstractStorage):
 
         key = load_key('user_key')
 
-        # This method will create a new database and migrate it if necessary.
         if db_key is None or key is None:
-            logger.info("User account not exist")
-            data_dir = get_data_dir("sd-server")
+            logger.info("User account does not exist, creating a new database.")
+            return self.remove_and_create_new_db(filepath, testing)
 
-            # If not filepath is not set create a new file in data_dir.
-            if not filepath:
-                filename = (
-                        "peewee-sqlite"
-                        + ("-testing" if testing else "")
-                        + f".v{LATEST_VERSION}"
-                        + ".db"
-                )
-                filepath = os.path.join(data_dir, filename)
+        password = decrypt_uuid(db_key, key)
+        user_email = cached_credentials.get("email")
 
-            try:
-                os.remove(filepath)
-                database_changed = True
-            except Exception:
-                pass
-
+        if not password:
+            logger.error("Failed to decrypt password. Initialization aborted.")
             return False
+
+        data_dir = get_data_dir("sd-server")
+
+        if not filepath:
+            filename = (
+                    "peewee-sqlite"
+                    + ("-testing" if testing else "")
+                    + f".v{LATEST_VERSION}"
+                    + ".db"
+            )
+            filepath = os.path.join(data_dir, filename)
         else:
-            password = decrypt_uuid(db_key, key)
-            user_email = cached_credentials.get("email")
-            # Return true if password is not password
-            if not password:
-                return False
+            expected_filepath = os.path.join(data_dir, f"peewee-sqlite-{user_email}.v{LATEST_VERSION}.db")
+            if filepath != expected_filepath:
+                database_changed = True
 
-            data_dir = get_data_dir("sd-server")
+        try:
+            _db = SqlCipherDatabase(filepath, passphrase=password)
+            _db.connect()
+            logger.info(f"Successfully connected to the database: {filepath}")
+            _db.execute_sql("SELECT name FROM sqlite_master WHERE type='table'")
+        except peewee.DatabaseError as e:
+            logger.error(f"Database error occurred: {e}")
 
-            # Check if the database file is changed.
-            if not filepath:
-                filename = (
-                        "peewee-sqlite"
-                        + f"-{user_email}"
-                        + f".v{LATEST_VERSION}"
-                        + ".db"
-                )
-                filepath = os.path.join(data_dir, filename)
+            if "file is not a database" in str(e).lower() or "hmac check failed" in str(e).lower():
+                logger.warning("The database file might be corrupt or the decryption key is incorrect.")
+                return self.remove_and_create_new_db(filepath, testing)
             else:
-                # Check if the database file path has changed
-                # If the file is not the same as the data directory as the data directory.
-                if filepath != os.path.join(data_dir, filename):
-                    database_changed = True
-            _db = SqlCipherDatabase(None, passphrase=password)
-            db_proxy.initialize(_db)
+                return False
+        except Exception as e:
+            logger.error(f"An unexpected error occurred: {e}")
+            return False
+
+        self.db = _db
+        db_proxy.initialize(_db)
+        self.db.init(filepath)
+
+        if self.create_tables():
+            database_changed = True
+
+        self.db.close()
+        if auto_migrate(_db, filepath):
+            database_changed = True
+        self.db.connect()
+
+        self.update_bucket_keys()
+        ensure_default_settings()
+        setup_weekday_settings()
+        db_cache.store(application_cache_key, self.retrieve_application_names())
+        db_cache.store(settings_cache_key, self.retrieve_all_settings())
+        check_startup_status()
+
+        if database_changed:
+            # Uncomment these lines if they are necessary to stop/start modules on changes
+            stop_all_module()
+            start_all_module()
+
+        self.launch_application_start()
+        return True
+
+    def remove_and_create_new_db(self, filepath: Optional[str], testing: bool) -> bool:
+        logger = logging.getLogger(__name__)
+        data_dir = get_data_dir("sd-server")
+
+        if not filepath:
+            filename = (
+                    "peewee-sqlite"
+                    + ("-testing" if testing else "")
+                    + f".v{LATEST_VERSION}"
+                    + ".db"
+            )
+            filepath = os.path.join(data_dir, filename)
+
+        try:
+            if os.path.exists(filepath):
+                os.remove(filepath)
+                logger.info(f"Corrupted database file removed: {filepath}")
+        except Exception as e:
+            logger.error(f"Failed to remove the corrupted database file: {e}")
+            return False
+
+        try:
+            _db = SqlCipherDatabase(filepath, passphrase=None)  # Passphrase is not needed for a new database
             self.db = _db
+            db_proxy.initialize(_db)
             self.db.init(filepath)
-            logger.info(f"Using database file: {filepath}")
-            self.db.connect()
 
-            try:
-                BucketModel.create_table(safe=True)
-                EventModel.create_table(safe=True)
-                SettingsModel.create_table(safe=True)
-                ApplicationModel.create_table(safe=True)
-                database_changed = True  # Assume tables creation is a change
-            except Exception:
-                pass  # If tables already exist, it's not a change
+            if self.create_tables():
+                database_changed = True
 
-            # Migrate database if needed, requires closing the connection first
             self.db.close()
-            # If auto_migrate is called automatically if auto_migrate is called.
-            if auto_migrate(_db, filepath):  # Assuming auto_migrate returns True if migration happens
+            if auto_migrate(_db, filepath):
                 database_changed = True
             self.db.connect()
 
-            # Update bucket keys
             self.update_bucket_keys()
-
             ensure_default_settings()
             setup_weekday_settings()
             db_cache.store(application_cache_key, self.retrieve_application_names())
             db_cache.store(settings_cache_key, self.retrieve_all_settings())
             check_startup_status()
-            # Stop all modules that have been changed.
+
             if database_changed:
-                stop_all_module()
-            start_all_module()
+                # Uncomment these lines if they are necessary to stop/start modules on changes
+                # stop_all_module()
+                # start_all_module()
+                pass
+
             self.launch_application_start()
             return True
+        except Exception as e:
+            logger.error(f"Failed to create a new database: {e}")
+            return False
+
+
 
     def update_bucket_keys(self) -> None:
         """
