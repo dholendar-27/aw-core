@@ -595,7 +595,7 @@ class PeeweeStorage(AbstractStorage):
             )
             filepath = os.path.join(data_dir, filename)
         else:
-            expected_filepath = os.path.join(data_dir, f"peewee-sqlite-{user_email}.v{LATEST_VERSION}.db")
+            expected_filepath = os.path.join(data_dir, f"sqlite-{user_email}.v{LATEST_VERSION}.db")
             if filepath != expected_filepath:
                 database_changed = True
 
