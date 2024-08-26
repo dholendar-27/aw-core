@@ -614,7 +614,7 @@ class PeeweeStorage(AbstractStorage):
             # Check if the database file is changed.
             if not filepath:
                 filename = (
-                        "peewee-sqlite"
+                        "sqlite"
                         + f"-{user_email}"
                         + f".v{LATEST_VERSION}"
                         + ".db"
@@ -661,6 +661,7 @@ class PeeweeStorage(AbstractStorage):
             #     stop_all_module()
             # start_all_module()
             self.launch_application_start()
+            db_cache.delete(settings_cache_key)
             return True
 
 

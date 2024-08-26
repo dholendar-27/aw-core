@@ -8,7 +8,7 @@ if sys.platform == "win32":
 
 if sys.platform == "win32":
     file_path = os.path.abspath(__file__)
-    _module_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+    _module_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     app_path = os.path.join(_module_dir, 'sd-qt.exe')
 if sys.platform == "darwin":
     app_path = "/Applications/TTim.app"
