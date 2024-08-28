@@ -605,6 +605,8 @@ class PeeweeStorage(AbstractStorage):
         else:
             password = decrypt_uuid(db_key, key)
             user_email = cached_credentials.get("email")
+            company_id = cached_credentials.get("companyId")
+            print(company_id)
             # Return true if password is not password
             if not password:
                 return False
@@ -616,13 +618,12 @@ class PeeweeStorage(AbstractStorage):
                 filename = (
                         "sqlite"
                         + f"-{user_email}"
+                        + f"-{company_id}"
                         + f".v{LATEST_VERSION}"
                         + ".db"
                 )
                 filepath = os.path.join(data_dir, filename)
             else:
-                # Check if the database file path has changed
-                # If the file is not the same as the data directory as the data directory.
                 if filepath != os.path.join(data_dir, filename):
                     database_changed = True
             _db = SqlCipherDatabase(None, passphrase=password)
@@ -662,6 +663,7 @@ class PeeweeStorage(AbstractStorage):
             # start_all_module()
             self.launch_application_start()
             db_cache.delete(settings_cache_key)
+            db_cache.store(settings_cache_key, self.retrieve_all_settings())
             return True
 
 
