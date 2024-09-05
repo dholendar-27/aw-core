@@ -494,10 +494,10 @@ def setup_weekday_settings():
             "Wednesday": True,
             "Thursday": True,
             "Friday": True,
-            "Saturday": False,
-            "Sunday": False,
-            "starttime": "09:30",
-            "endtime": "18:30"
+            "Saturday": True,
+            "Sunday": True,
+            "starttime": "00:00",
+            "endtime": "23:59"
         }
 
         # Check if the weekday settings already exist in the database
@@ -658,9 +658,9 @@ class PeeweeStorage(AbstractStorage):
             db_cache.store(settings_cache_key, self.retrieve_all_settings())
             check_startup_status()
             # Stop all modules that have been changed.
-            # if database_changed:
-            #     stop_all_module()
-            # start_all_module()
+            if database_changed:
+                stop_all_module()
+            start_all_module()
             self.launch_application_start()
             db_cache.delete(settings_cache_key)
             db_cache.store(settings_cache_key, self.retrieve_all_settings())
