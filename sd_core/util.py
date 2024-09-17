@@ -10,6 +10,7 @@ from cryptography.fernet import Fernet
 import keyring
 import pam
 from sd_qt.manager import Manager
+from sd_core.db_cache import retrieve
 import requests
 manager = Manager()
 
@@ -41,8 +42,8 @@ def assert_version(required_version: Tuple[int, ...] = (3, 5)):  # pragma: no co
     if actual_version <= required_version:
         raise VersionException(
             (
-                    "Python version {} not supported, you need to upgrade your Python"
-                    + " version to at least {}."
+                "Python version {} not supported, you need to upgrade your Python"
+                + " version to at least {}."
             ).format(required_version)
         )
     logger.debug(f"Python version: {_version_info_tuple()}")
@@ -120,7 +121,8 @@ def decrypt_uuid(encrypted_uuid, key):
     """
     try:
         fernet = Fernet(key)
-        encrypted_uuid_byte = base64.urlsafe_b64decode(encrypted_uuid.encode('utf-8'))
+        encrypted_uuid_byte = base64.urlsafe_b64decode(
+            encrypted_uuid.encode('utf-8'))
         decrypted_uuid = fernet.decrypt(encrypted_uuid_byte)
         return decrypted_uuid.decode()
     except Exception as e:
@@ -219,7 +221,7 @@ def list_modules():
     return modules
 
 
-def start_module( module_name):
+def start_module(module_name):
     """
      Start a module. This is a convenience method to call : py : func : ` manager. start ` without having to worry about the name of the module.
 
@@ -228,7 +230,7 @@ def start_module( module_name):
     manager.start(module_name)
 
 
-def stop_module( module_name):
+def stop_module(module_name):
     """
      Stop a module. This is a no - op if the module is not running. It does not check for availability of the module.
 
@@ -248,11 +250,13 @@ def stop_all_module():
         if not module["watcher_name"] == "sd-server":
             manager.stop_modules(module["watcher_name"])
 
+
 def stop_server():
     modules = list_modules()
     # Stop all modules that have a watcher_name
     for module in modules:
         manager.stop_modules(module["watcher_name"])
+
 
 def start_all_module():
     """
@@ -261,9 +265,12 @@ def start_all_module():
     modules = list_modules()
 
     # Start the watcher manager.
-    for module in modules:
-        manager.start(module["watcher_name"])
+    settings_cache_key = "settings_cache"
+    cached_settings = retrieve(settings_cache_key)
 
+    for module in modules:
+        if not cached_settings.get('idle_time') and module == "sd-watcher-afk":
+            manager.start(module["watcher_name"])
 
 
 def is_internet_connected():
@@ -282,10 +289,12 @@ def is_internet_connected():
         # If there's a connection error, return False
         return False
 
+
 def get_domain(url):
     if not url:
         return url
-    url = url.replace("https://", "").replace("http://", "").replace("www.", "")
+    url = url.replace("https://", "").replace("http://",
+                                              "").replace("www.", "")
     parts = url.split("/")
     domain_parts = parts[0].split(".")
 
@@ -296,12 +305,14 @@ def get_domain(url):
     else:
         return parts[0]
 
+
 def get_document_title(event):
     url = event.data.get('url', '')
     title = event.data.get('title', '')
     if "sharepoint.com" in url:
         title = "OneDrive"
     return title
+
 
 def remove_more_page_suffix(text):
     # Check if "More Page" string exists in the text

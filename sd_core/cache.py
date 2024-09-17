@@ -105,20 +105,22 @@ def clear_credentials(service):
     else:
         logger.info(f"No credentials found in cache for service: {service}")
 
+
 def clear_all_credentials():
     """Clear all credentials from the cache."""
     logger.info("Clearing all credentials from cache.")
     credentials_cache.clear()
 
+
 def cache_user_credentials(service):
     """Cache user credentials for the given service."""
     cached_credentials = get_credentials(service)
-    print("data",cached_credentials)
     if cached_credentials is None:
         credentials_str = get_password(service)
         if credentials_str:
             try:
-                credentials = json.loads(credentials_str)  # Parse the JSON string to a dictionary
+                # Parse the JSON string to a dictionary
+                credentials = json.loads(credentials_str)
                 store_credentials(service, credentials)
                 return credentials
             except json.JSONDecodeError:

@@ -520,16 +520,17 @@ def ensure_default_settings():
         "time_zone": formatted_tz,
         "timeformat": 12,
         "schedule": False,
-        "launch": True
+        "launch": True,
+        "idle_time": True,
     }
 
     for code, value in default_settings.items():
-        setting, created = SettingsModel.get_or_create(code=code, defaults={"value": json.dumps(value)})
+        setting, created = SettingsModel.get_or_create(
+            code=code, defaults={"value": json.dumps(value)})
         if created:
             print(f"Created default setting: {code} = {value}")
         else:
             print(f"Default setting already exists: {code} = {setting.value}")
-
 
 
 class PeeweeStorage(AbstractStorage):
@@ -930,10 +931,6 @@ class PeeweeStorage(AbstractStorage):
                 timestamp >= '{starttime}'
                 AND timestamp <= '{endtime}'
                 AND duration > 30
-                AND app NOT LIKE '%afk%'
-                AND JSON_EXTRACT(datastr, '$.app') NOT LIKE '%LockApp%'
-                AND JSON_EXTRACT(datastr, '$.app') NOT LIKE '%loginwindow%'
-                AND IFNULL(JSON_EXTRACT(datastr, '$.status'), '') NOT LIKE '%not-afk%'
             ORDER BY
                 timestamp ASC;
         """
