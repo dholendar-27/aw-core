@@ -270,7 +270,8 @@ def start_all_module():
 
     for module in modules:
         if not cached_settings.get('idle_time') and module == "sd-watcher-afk":
-            manager.start(module["watcher_name"])
+            continue
+        manager.start(module["watcher_name"])
 
 
 def is_internet_connected():
