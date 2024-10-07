@@ -1356,11 +1356,15 @@ class PeeweeStorage(AbstractStorage):
             try:
                 if setting.code != "profilePic":
                     # Attempt to deserialize each value from a JSON string
-                    all_settings[setting.code] = json.loads(setting.value) if setting.value else None
+                    all_settings[setting.code] = json.loads(
+                        setting.value) if setting.value else None
             except json.JSONDecodeError as e:
                 # Log the error and skip this setting or set a default value
-                logger.error(f"Error decoding JSON for setting '{setting.code}': {e}")
-                all_settings[setting.code] = None  # Or set a default value if appropriate
+                logger.error(
+                    f"Error decoding JSON for setting '{setting.code}': {e}")
+                # Or set a default value if appropriate
+                all_settings[setting.code] = None
+            db_cache.update(settings_cache_key,all_settings)
         return all_settings
 
     def update_setting(code, new_value_dict):
