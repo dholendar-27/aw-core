@@ -70,7 +70,6 @@ def load_key(service_name):
 
      @return A dict of credentials or None if not found in the cache or no credentials could be found in the
     """
-    cache_key = "Sundial"
     cached_credentials = cache_user_credentials("SD_KEYS")
     # Returns the credentials for the service.
     if cached_credentials != None:
@@ -203,7 +202,7 @@ def reset_user():
     """
     try:
         delete_password("SD_KEYS")
-        cache_key = "Sundial"
+        cache_key = "SD_KEYS"
         clear_credentials(cache_key)
         stop_all_module()
     except Exception as e:
