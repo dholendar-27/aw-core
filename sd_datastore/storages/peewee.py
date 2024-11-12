@@ -61,6 +61,8 @@ from cryptography.fernet import Fernet
 import cryptocode
 import keyring
 from peewee import DoesNotExist
+import uuid #UUID
+from peewee import UUIDField #UUID
 
 logging.basicConfig(encoding='utf-8')
 
@@ -91,6 +93,7 @@ def auto_migrate(db: Any, path: str) -> None:
 
      @return None if no errors otherwise an error object with the errors
     """
+    print("Running Migrations 098765434567898765434567876545678765678765678765678765678765")
     db.init(path)
     db.connect()
     migrator = SqliteMigrator(db)
@@ -327,6 +330,7 @@ class EventModel(BaseModel):
     url = TextField(null=True)
     application_name = CharField(max_length=50)
     server_sync_status = IntegerField(default=0)
+    uuid = UUIDField(unique=True, default=uuid.uuid4) #UUID
 
     @classmethod
     def from_event(cls, bucket_key, event: Event):
@@ -439,7 +443,8 @@ class EventModel(BaseModel):
             "title": self.title,
             "url": self.url,
             "application_name": self.application_name,
-            "server_sync_status": self.server_sync_status
+            "server_sync_status": self.server_sync_status,
+            "uuid": str(self.uuid) #UUID 
         }
 
 
@@ -605,6 +610,7 @@ class PeeweeStorage(AbstractStorage):
             return False
         else:
             password = decrypt_uuid(db_key, key)
+            print("Password ===============> " + str(password))
             user_email = cached_credentials.get("email")
             company_id = cached_credentials.get("companyId")
             print(company_id)
@@ -1383,6 +1389,8 @@ class PeeweeStorage(AbstractStorage):
             setting = SettingsModel.get(SettingsModel.code == code)
             setting.value = json.dumps(new_value_dict)  # Serialize the new value to JSON
             setting.save()
+            db_cache.update(settings_cache_key, new_value_dict)
+            print("bbbbbbbbbbbbbbbb ==> " + str(json.dumps(new_value_dict)))
             return setting
         except SettingsModel.DoesNotExist:
             return None
