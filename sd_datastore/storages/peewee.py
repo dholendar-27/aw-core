@@ -931,6 +931,7 @@ class PeeweeStorage(AbstractStorage):
                 timestamp >= '{starttime}'
                 AND timestamp <= '{endtime}'
                 AND duration > 30
+                AND IFNULL(JSON_EXTRACT(datastr, '$.status'), '') NOT LIKE '%not-afk%'
             ORDER BY
                 timestamp ASC;
         """
@@ -1322,13 +1323,15 @@ class PeeweeStorage(AbstractStorage):
         Returns:
         - SettingsModel instance of the saved or updated setting.
         """
+        all_settings = {}
         value_json = json.dumps(value_dict)  # Convert the dictionary to a JSON string
         setting, created = SettingsModel.get_or_create(code=code, defaults={'value': value_json})
         if not created:
             setting.value = value_json
             setting.save()
-            db_cache.store(settings_cache_key, self.retrieve_all_settings())
-        return setting
+            all_settings = self.retrieve_all_settings()
+            db_cache.store(settings_cache_key, all_settings )
+        return all_settings
 
     def retrieve_setting(self, code):
         """
