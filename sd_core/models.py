@@ -286,3 +286,11 @@ class Event(dict):
     @server_sync_status.setter
     def server_sync_status(self, server_sync_status: Number) -> None:
         self["server_sync_status"] = server_sync_status
+
+    @property
+    def eventId(self) -> None:
+        return self["eventId"]
+
+    @eventId.setter
+    def eventId(self, eventId: str) -> str:
+        self["eventId"] = eventId

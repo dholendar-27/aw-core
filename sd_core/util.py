@@ -71,7 +71,7 @@ def load_key(service_name):
      @return A dict of credentials or None if not found in the cache or no credentials could be found in the
     """
     cache_key = "Sundial"
-    cached_credentials = cache_user_credentials("SD_KEYS")
+    cached_credentials = cache_user_credentials(cache_key)
     # Returns the credentials for the service.
     if cached_credentials != None:
         return cached_credentials.get(service_name)

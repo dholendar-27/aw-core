@@ -34,7 +34,3 @@ def get_json_schema(name: str) -> dict:
         data = json.load(f)
     return data
 
-
-# Print the JSON schema for the event.
-if __name__ == "__main__":
-    print(get_json_schema("event"))
