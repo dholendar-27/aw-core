@@ -27,6 +27,7 @@ title = str
 url = str
 application_name=str
 server_sync_status = Number
+uuid = str
 
 
 def _timestamp_parse(ts_in: ConvertibleTimestamp) -> datetime:
@@ -88,7 +89,8 @@ class Event(dict):
             title: title = '',
             url: url = '',
             application_name: application_name = '',
-            server_sync_status: server_sync_status = 0
+            server_sync_status: server_sync_status = 0,
+            uuid: uuid = ''
     ) -> None:
         """
          Initialize an event with the given id timestamp duration and data. This is the constructor for Event objects that do not need to be called directly.
