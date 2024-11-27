@@ -12,12 +12,7 @@ from typing import (
 )
 import re
 import ctypes
-from urllib.parse import unquote
-
-import pytz
-import tldextract
 from playhouse.shortcuts import model_to_dict
-
 from sd_core.cache import cache_user_credentials
 from sd_core import db_cache
 from sd_core.launch_start import set_autostart_registry, launch_app, check_startup_status
@@ -33,9 +28,8 @@ elif sys.platform == "darwin":
     openssl = ctypes.cdll.LoadLibrary(libsqlcipher_path + '/libcrypto.3.dylib')
     libsqlcipher = ctypes.cdll.LoadLibrary(libsqlcipher_path + '/libsqlcipher.0.dylib')
 
-from sd_core.util import decrypt_uuid, get_document_title, get_domain, load_key, remove_more_page_suffix, \
+from sd_core.util import decrypt_uuid, get_domain, load_key, remove_more_page_suffix, \
     start_all_module, stop_all_module
-import keyring
 import iso8601
 from sd_core.dirs import get_data_dir
 from sd_core.models import Event
@@ -58,9 +52,6 @@ from peewee import (
 )
 
 from .abstract import AbstractStorage
-from cryptography.fernet import Fernet
-import cryptocode
-import keyring
 from peewee import DoesNotExist
 import uuid #UUID
 
@@ -1331,8 +1322,9 @@ class PeeweeStorage(AbstractStorage):
         if not created:
             setting.value = value_json
             setting.save()
-            db_cache.store(settings_cache_key, self.retrieve_all_settings())
-        return setting
+            retrieve_all_settings = self.retrieve_all_settings()
+            db_cache.store(settings_cache_key,retrieve_all_settings)
+        return retrieve_all_settings
 
     def retrieve_setting(self, code):
         """
