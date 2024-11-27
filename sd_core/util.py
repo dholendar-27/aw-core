@@ -16,6 +16,7 @@ manager = Manager()
 
 logger = logging.getLogger(__name__)
 
+CACHE_KEY = "Sundial"
 
 class VersionException(Exception):
     ...
@@ -70,8 +71,7 @@ def load_key(service_name):
 
      @return A dict of credentials or None if not found in the cache or no credentials could be found in the
     """
-    cache_key = "Sundial"
-    cached_credentials = cache_user_credentials("SD_KEYS")
+    cached_credentials = cache_user_credentials(CACHE_KEY)
     # Returns the credentials for the service.
     if cached_credentials != None:
         return cached_credentials.get(service_name)
@@ -202,9 +202,8 @@ def reset_user():
      Reset user to default values and stop all modules on success or failure Args : None Return : None Purpose : Clears password and cache
     """
     try:
-        delete_password("SD_KEYS")
-        cache_key = "Sundial"
-        clear_credentials(cache_key)
+        delete_password(CACHE_KEY)
+        clear_credentials(CACHE_KEY)
         stop_all_module()
     except Exception as e:
         print(f"Authentication error: {e}")

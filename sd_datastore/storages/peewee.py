@@ -80,7 +80,7 @@ _db = None
 LATEST_VERSION = 2
 application_cache_key = "application_cache"
 settings_cache_key = "settings_cache"
-
+CACHE_KEY = "Sundial"
 
 def auto_migrate(db: Any, path: str) -> None:
     """
@@ -569,8 +569,7 @@ class PeeweeStorage(AbstractStorage):
          @return True if the database was initialized False if it was
         """
         db_key = ""
-        cache_key = "Sundial"
-        cached_credentials = cache_user_credentials("SD_KEYS")
+        cached_credentials = cache_user_credentials(CACHE_KEY)
         database_changed = False  # Flag to track if the database has been changed
 
         # Returns the encrypted db_key if the cached credentials are cached.
