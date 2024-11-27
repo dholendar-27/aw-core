@@ -443,7 +443,7 @@ class EventModel(BaseModel):
             "url": self.url,
             "application_name": self.application_name,
             "server_sync_status": self.server_sync_status,
-            "eventId": str(self.eventId)  # UUID
+            # "eventId": str(self.eventId)  # UUID
         }
 
 
