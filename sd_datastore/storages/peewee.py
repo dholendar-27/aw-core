@@ -50,6 +50,7 @@ from peewee import (
     DecimalField,
     BooleanField,
     TextField,
+    UUIDField,
     ForeignKeyField,
     IntegerField,
     Model,
@@ -61,6 +62,7 @@ from cryptography.fernet import Fernet
 import cryptocode
 import keyring
 from peewee import DoesNotExist
+import uuid #UUID
 
 logging.basicConfig(encoding='utf-8')
 
@@ -327,6 +329,7 @@ class EventModel(BaseModel):
     url = TextField(null=True)
     application_name = CharField(max_length=50)
     server_sync_status = IntegerField(default=0)
+    eventId = UUIDField(unique=True, default=uuid.uuid4)
 
     @classmethod
     def from_event(cls, bucket_key, event: Event):
@@ -439,7 +442,8 @@ class EventModel(BaseModel):
             "title": self.title,
             "url": self.url,
             "application_name": self.application_name,
-            "server_sync_status": self.server_sync_status
+            "server_sync_status": self.server_sync_status,
+            "eventId": str(self.eventId)  # UUID
         }
 
 
@@ -606,7 +610,7 @@ class PeeweeStorage(AbstractStorage):
             password = decrypt_uuid(db_key, key)
             user_email = cached_credentials.get("email")
             company_id = cached_credentials.get("companyId")
-            print(company_id)
+            print(password)
             # Return true if password is not password
             if not password:
                 return False
@@ -970,7 +974,8 @@ class PeeweeStorage(AbstractStorage):
                         'data', JSON(CAST(datastr AS TEXT)),
                         'id', id,
                         'bucket_id', bucket_id,
-                        'application_name', application_name
+                        'application_name', application_name,
+                        'eventId', eventId
                     )
                 ) AS formatted_events
             FROM

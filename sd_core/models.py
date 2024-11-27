@@ -27,6 +27,7 @@ title = str
 url = str
 application_name=str
 server_sync_status = Number
+eventId = str
 
 
 def _timestamp_parse(ts_in: ConvertibleTimestamp) -> datetime:
@@ -286,3 +287,11 @@ class Event(dict):
     @server_sync_status.setter
     def server_sync_status(self, server_sync_status: Number) -> None:
         self["server_sync_status"] = server_sync_status
+
+    @property
+    def eventId(self) -> str:
+        return self["eventId"]
+
+    @eventId.setter
+    def eventId(self, eventId: str) -> None:
+        self["eventId"] = eventId
