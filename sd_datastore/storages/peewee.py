@@ -1331,8 +1331,9 @@ class PeeweeStorage(AbstractStorage):
         if not created:
             setting.value = value_json
             setting.save()
-            db_cache.store(settings_cache_key, self.retrieve_all_settings())
-        return setting
+            retrieve_settings_key = self.retrieve_all_settings()
+            db_cache.store(settings_cache_key, retrieve_settings_key)
+        return retrieve_settings_key
 
     def retrieve_setting(self, code):
         """
