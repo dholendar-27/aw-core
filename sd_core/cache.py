@@ -106,10 +106,11 @@ def clear_credentials(service):
         logger.info(f"No credentials found in cache for service: {service}")
 
 
-def clear_all_credentials():
+def clear_all_credentials(service):
     """Clear all credentials from the cache."""
     logger.info("Clearing all credentials from cache.")
     credentials_cache.clear()
+    delete_password(service)
 
 
 def cache_user_credentials(service):
