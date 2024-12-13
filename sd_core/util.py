@@ -259,18 +259,27 @@ def stop_server():
 
 def start_all_module():
     """
-     Start all sd - server modules that don't have a watcher_name. This is used to ensure that we're able to listen for changes
+    Start all sd-server modules that don't have a watcher_name. This is used to ensure that we're able to listen for changes
+    while ensuring the watcher is properly managed.
     """
+    # Get the list of modules
     modules = list_modules()
 
-    # Start the watcher manager.
+    # Retrieve the cached settings
     settings_cache_key = "settings_cache"
     cached_settings = retrieve(settings_cache_key)
+    # Ensure that idle_time exists and is truthy
+    idle_time = cached_settings.get('idle_time')
 
     for module in modules:
-        if not cached_settings.get('idle_time') and module == "sd-watcher-afk":
-            continue
-        manager.start(module["watcher_name"])
+        # If there's no idle_time or the module is "sd-watcher-afk", skip it
+        if not idle_time and module.get("watcher_name") == "sd-watcher-afk":
+            print(f"Skipping module: {module.get('watcher_name')}")
+            continue  # Skip this iteration, don't start the module
+
+        # Start the module if it doesn't meet the skipping condition
+        if module.get("watcher_name"):
+            manager.start(module["watcher_name"])
 
 
 def is_internet_connected():
