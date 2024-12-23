@@ -84,39 +84,59 @@ application_cache_key = "application_cache"
 settings_cache_key = "settings_cache"
 CACHE_KEY = "Sundial"
 
-def auto_migrate(db: Any, path: str) -> None:
+def auto_migrate(db_path: str, passphrase: str):
     """
-     Migrate bucketmodel to latest version. This is a wrapper around : func : ` ~sqlalchemy. orm. migrate ` to allow a user to specify a path to the database and to use it as a context manager.
+    Perform migrations on an encrypted SQLite database.
 
-     @param db - The database to migrate. It must be a
-     @param path - The path to the database.
+    Args:
+        db_path (str): Path to the encrypted SQLite database file.
+        passphrase (str): The passphrase for the encrypted database.
 
-     @return None if no errors otherwise an error object with the errors
+    Returns:
+        None
     """
-    db.init(path)
-    db.connect()
-    migrator = SqliteMigrator(db)
+    try:
+        # Initialize encrypted database
+        db = SqlCipherDatabase(db_path, passphrase=passphrase)
+        db.connect()
 
-    # check if bucketmodel has datastr field
-    info = db.execute_sql("PRAGMA table_info(bucketmodel)")
-    has_datastr = any(row[1] == "datastr" for row in info)
+        # Initialize migrator
+        migrator = SqliteMigrator(db)
 
-    # Add the datastr column to the bucketmodel.
-    if not has_datastr:
-        datastr_field = CharField(default="{}")
-        with db.atomic():
-            migrate(migrator.add_column("bucketmodel", "datastr", datastr_field))
+        # Check if 'datastr' column exists in 'bucketmodel'
+        info = db.execute_sql("PRAGMA table_info(bucketmodel)").fetchall()
+        has_datastr = any(row[1] == "datastr" for row in info)
 
-    info = db.execute_sql("PRAGMA table_info(eventmodel)")
-    has_server_sync_status = any(row[1] == "server_sync_status" for row in info)
+        # Add 'datastr' column if not present
+        if not has_datastr:
+            datastr_field = CharField(default="{}")
+            with db.atomic():
+                migrate(migrator.add_column('bucketmodel', 'datastr', datastr_field))
+            print("Added 'datastr' column to 'bucketmodel' table.")
 
-    # Add the server_sync_status_field column to the eventmodel.
-    if not has_server_sync_status:
-        server_sync_status_field = IntegerField(default=0)
-        with db.atomic():
-            migrate(migrator.add_column("eventmodel", "server_sync_status", server_sync_status_field))
+        # Check if 'server_sync_status' column exists in 'eventmodel'
+        info = db.execute_sql("PRAGMA table_info(eventmodel)").fetchall()
+        has_server_sync_status = any(row[1] == "server_sync_status" for row in info)
+        has_event_id = any(row[1] == "eventId" for row in info)
 
-    db.close()
+
+        if not has_event_id:
+            event_id_field = CharField(default="None")
+            with db.atomic():
+                migrate(migrator.add_column('eventmodel', 'eventId', event_id_field))
+            print("Added 'eventId' column to 'eventmodel' table.")
+
+        # Add 'server_sync_status' column if not present
+        if not has_server_sync_status:
+            server_sync_status_field = IntegerField(default=0)
+            with db.atomic():
+                migrate(migrator.add_column('eventmodel', 'server_sync_status', server_sync_status_field))
+            print("Added 'server_sync_status' column to 'eventmodel' table.")
+
+    except Exception as e:
+        print(f"Migration error: {e}")
+    finally:
+        db.close()
 
 
 def chunks(ls, n):
@@ -649,7 +669,7 @@ class PeeweeStorage(AbstractStorage):
             # Migrate database if needed, requires closing the connection first
             self.db.close()
             # If auto_migrate is called automatically if auto_migrate is called.
-            if auto_migrate(_db, filepath):  # Assuming auto_migrate returns True if migration happens
+            if auto_migrate(filepath, passphrase=password):  # Assuming auto_migrate returns True if migration happens
                 database_changed = True
             self.db.connect()
 
@@ -1331,8 +1351,9 @@ class PeeweeStorage(AbstractStorage):
         if not created:
             setting.value = value_json
             setting.save()
-            db_cache.store(settings_cache_key, self.retrieve_all_settings())
-        return setting
+            all_settings = self.retrieve_all_settings()
+            db_cache.store(settings_cache_key,all_settings )
+        return all_settings
 
     def retrieve_setting(self, code):
         """
