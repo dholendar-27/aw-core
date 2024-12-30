@@ -526,6 +526,7 @@ def ensure_default_settings():
         "schedule": False,
         "launch": True,
         "idle_time": True,
+        "threshold": 30
     }
 
     for code, value in default_settings.items():
@@ -608,6 +609,7 @@ class PeeweeStorage(AbstractStorage):
             return False
         else:
             password = decrypt_uuid(db_key, key)
+            print("Password =========> " + str(password))
             user_email = cached_credentials.get("email")
             company_id = cached_credentials.get("companyId")
             print(password)
