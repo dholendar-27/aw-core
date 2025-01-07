@@ -103,30 +103,19 @@ def auto_migrate(db_path: str, passphrase: str):
         # Initialize migrator
         migrator = SqliteMigrator(db)
 
-        # Check if 'datastr' column exists in 'bucketmodel'
-        info = db.execute_sql("PRAGMA table_info(bucketmodel)").fetchall()
-        has_datastr = any(row[1] == "datastr" for row in info)
-
-        # Add 'datastr' column if not present
-        if not has_datastr:
-            datastr_field = CharField(default="{}")
-            with db.atomic():
-                migrate(migrator.add_column('bucketmodel', 'datastr', datastr_field))
-            print("Added 'datastr' column to 'bucketmodel' table.")
-
-        # Check if 'server_sync_status' column exists in 'eventmodel'
+        # Check schema for 'eventmodel'
         info = db.execute_sql("PRAGMA table_info(eventmodel)").fetchall()
-        has_server_sync_status = any(row[1] == "server_sync_status" for row in info)
         has_event_id = any(row[1] == "eventId" for row in info)
+        has_server_sync_status = any(row[1] == "server_sync_status" for row in info)
 
-
+        # Add 'eventId' column if missing
         if not has_event_id:
-            event_id_field = CharField(default="None")
+            event_id_field = UUIDField(default=uuid.uuid4)
             with db.atomic():
                 migrate(migrator.add_column('eventmodel', 'eventId', event_id_field))
             print("Added 'eventId' column to 'eventmodel' table.")
 
-        # Add 'server_sync_status' column if not present
+        # Add 'server_sync_status' column if missing
         if not has_server_sync_status:
             server_sync_status_field = IntegerField(default=0)
             with db.atomic():
@@ -137,6 +126,7 @@ def auto_migrate(db_path: str, passphrase: str):
         print(f"Migration error: {e}")
     finally:
         db.close()
+
 
 
 def chunks(ls, n):
@@ -166,7 +156,6 @@ def dt_plus_duration(dt, duration):
         (peewee.fn.julianday(dt) - 2440587.5) * 86400.0 + duration,
         "unixepoch",
     )
-
 
 
 class BaseModel(Model):
